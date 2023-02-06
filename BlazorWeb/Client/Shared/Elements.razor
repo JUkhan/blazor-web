@@ -1,0 +1,126 @@
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using BlazorWeb.Shared
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+
+<h5>Elements</h5>
+<form class="row g-3">
+  <div class="col-auto">
+    <input class="form-control" autofocus type="text" placeholder="Type" @bind="newElement.Type">
+  </div>
+  <div class="col-auto">
+    <input class="form-control" placeholder="Width" type="number" @bind="newElement.Width">
+  </div>
+  <div class="col-auto">
+    <input class="form-control" placeholder="Hight" type="number" @bind="newElement.Height">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary" @onclick="NewOrder">New Element</button>
+  </div>
+</form>
+
+<QuickGrid class="table" Items="@elemnts">
+  <TemplateColumn Title="Type" IsDefaultSort="SortDirection.Ascending">
+    @if (context.IsUpdate)
+                {
+                  <input class="form-control" autofocus type="text" @bind="context.Type">
+                }
+                else
+                {
+                  <span>@context.Type</span>
+                }
+              </TemplateColumn>
+              <TemplateColumn Title="Width">
+                @if (context.IsUpdate)
+      {
+        <input class="form-control" type="number" @bind="context.Width">
+      }
+      else
+      {
+        <span>@context.Width</span>
+      }
+    </TemplateColumn>
+    <TemplateColumn Title="Height">
+      @if (context.IsUpdate)
+      {
+        <input class="form-control" type="number" @bind="context.Height">
+      }
+      else
+      {
+        <span>@context.Height</span>
+      }
+    </TemplateColumn>
+    <TemplateColumn Title="Actions">
+      @if (context.IsUpdate)
+      {
+        <button class="btn btn-link" @onclick="@(() => Update(context))">Save</button>
+        <button class="btn btn-link" @onclick="@(() => context.IsUpdate=false)">Cancel</button>
+
+      }
+      else
+      {
+        <button class="btn btn-link" @onclick="@(() =>{ context.IsUpdate=true;})">Update</button>
+        <button class="btn btn-link" @onclick="@(() => Delete(context))">Delete</button>
+      }
+    </TemplateColumn>
+  </QuickGrid>
+
+
+  @code {
+  [Parameter]
+  public int WindowId { get; set; }
+
+  [Parameter]
+  public EventCallback<int> OnElementChange { get; set; }
+
+  ElementDto newElement = new ElementDto();
+  IQueryable<ElementDto>? elemnts;
+  protected override async Task OnInitializedAsync()
+  {
+
+    var res = await Http.GetFromJsonAsync<List<ElementDto>>($"api/element/{WindowId}");
+    elemnts = res?.AsQueryable();
+  }
+  void Details(ElementDto dto)
+  {
+    dto.IsExpand = !dto.IsExpand;
+  }
+  async Task Update(ElementDto element)
+  {
+    var response = await Http.PutAsJsonAsync("api/element/" + element.Id, element);
+    var res = await response.Content.ReadFromJsonAsync<bool>();
+    element.IsUpdate = !res;
+  }
+  async Task Delete(ElementDto element)
+  {
+    if (await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure?"))
+    {
+      var response = await Http.DeleteAsync($"api/element/{element.Id}");
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      if (res)
+      {
+        elemnts = elemnts?.Where(it => it.Id != element.Id);
+        await OnElementChange.InvokeAsync(-1);
+      }
+    }
+
+  }
+  async Task NewOrder()
+  {
+    var element = new ElementDto
+    {
+      Type = newElement.Type,
+      Width = newElement.Width,
+      Height = newElement.Height,
+      WindowId = WindowId
+    };
+    var response = await Http.PostAsJsonAsync("api/element", element);
+    element = await response.Content.ReadFromJsonAsync<ElementDto>();
+    if (element != null)
+    {
+      elemnts = elemnts?.Prepend(element);
+      newElement = new ElementDto { };
+      await OnElementChange.InvokeAsync(1);
+    }
+  }
+}

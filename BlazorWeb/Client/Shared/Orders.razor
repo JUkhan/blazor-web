@@ -1,0 +1,139 @@
+@using BlazorWeb.Shared
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+
+<h3>Orders</h3>
+<form class="row g-3">
+  <div class="col-auto">
+    <input type="text" placeholder="Name" class="form-control" @bind="newOrder.Name">
+  </div>
+  <div class="col-auto">
+    <select class="form-control" @bind="newOrder.State">
+      <option value="">Select the state</option>
+      @foreach (var state in states)
+      {
+        <option value=@state.Key>@state.Value</option>
+      }
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="button" @onclick="NewOrder" class="btn btn-primary mb-3">New Order</button>
+  </div>
+</form>
+
+@if (orders == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+  <table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>State</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach (var order in orders)
+      {
+        <tr>
+          <td>
+            @if (order.IsUpdate)
+            {
+              <input class="form-control" Autofocus type="text" @bind="order.Name">
+            }
+            else
+            {
+              <span>@order.Name</span>
+            }
+          </td>
+          <td>
+            @if (order.IsUpdate)
+            {
+              <select class="form-control" @bind="order.State">
+                <option value="">Select the state</option>
+                @foreach (var state in states)
+                {
+                  <option value=@state.Key>@state.Value</option>
+                }
+              </select>
+            }
+            else
+            {
+              <span>@order.State</span>
+            }
+          </td>
+          <td>
+            @if (order.IsUpdate)
+            {
+              <button class="btn btn-link" @onclick="@(() => Update(order))">Save</button>
+              <button class="btn btn-link" @onclick="@(() => order.IsUpdate=false)">Cancel</button>
+
+            }
+            else
+            {
+              <button class="btn btn-link" @onclick="@(() => Details(order))">Details</button>
+              <button class="btn btn-link" @onclick="@(() =>{ order.IsUpdate=true;})">Update</button>
+              <button class="btn btn-link" @onclick="@(() => Delete(order))">Delete</button>
+            }
+          </td>
+        </tr>
+        @if (order.IsExpand)
+        {
+          <tr>
+            <td colspan="3" class="p-4">
+              <Windows OrderId="order.Id"></Windows>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+}
+
+@code {
+  OrderDto newOrder = new OrderDto();
+  List<OrderDto>? orders = new();
+  Dictionary<string, string>? states;
+  protected override async Task OnInitializedAsync()
+  {
+    orders = await Http.GetFromJsonAsync<List<OrderDto>>("api/order");
+    states = await Http.GetFromJsonAsync<Dictionary<string, string>>("states.json");
+
+  }
+  void Details(OrderDto dto)
+  {
+    dto.IsExpand = !dto.IsExpand;
+  }
+  async Task Update(OrderDto order)
+  {
+    var response = await Http.PutAsJsonAsync("api/order/" + order.Id, order);
+    var res = await response.Content.ReadFromJsonAsync<bool>();
+    order.IsUpdate = !res;
+  }
+  async Task Delete(OrderDto order)
+  {
+    if (await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure?"))
+    {
+      var response = await Http.DeleteAsync($"api/order/{order.Id}");
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      if (res)
+        orders = orders?.Where(it => it.Id != order.Id).ToList();
+    }
+
+  }
+  async Task NewOrder()
+  {
+    var order = new OrderDto { Name = newOrder.Name, State = newOrder.State };
+    var response = await Http.PostAsJsonAsync("api/order", order);
+    order = await response.Content.ReadFromJsonAsync<OrderDto>();
+    if (order != null)
+    {
+      orders?.Insert(0, order);
+      newOrder = new OrderDto();
+
+    }
+  }
+}

@@ -1,0 +1,133 @@
+@using BlazorWeb.Shared
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+
+<h5>Windows</h5>
+<form class="row g-3">
+  <div class="col-auto"><input class="form-control" autofocus type="text" placeholder="Name" @bind="newWindow.Name">
+  </div>
+  <div class="col-auto">
+    <input class="form-control" placeholder="Quantity" type="number" @bind="newWindow.Quantity">
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-primary mb-3" @onclick="NewOrder">New Window</button>
+  </div>
+</form>
+
+
+
+
+@if (windows == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+  <table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Quantity</th>
+      <th>Total Sub Elemennts</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach (var window in windows)
+      {
+        <tr>
+          <td>
+            @if (window.IsUpdate)
+            {
+              <input Autofocus type="text" @bind="window.Name">
+            }
+            else
+            {
+              <span>@window.Name</span>
+            }
+          </td>
+          <td>
+            @if (window.IsUpdate)
+            {
+              <input type="number" @bind="window.Quantity">
+            }
+            else
+            {
+              <span>@window.Quantity</span>
+            }
+          </td>
+          <td>@window.TotalSubElement</td>
+          <td>
+            @if (window.IsUpdate)
+            {
+              <button class="btn btn-link" @onclick="@(() => Update(window))">Save</button>
+              <button class="btn btn-link" @onclick="@(() => window.IsUpdate=false)">Cancel</button>
+
+            }
+            else
+            {
+              <button class="btn btn-link" @onclick="@(() => Details(window))">Details</button>
+              <button class="btn btn-link" @onclick="@(() =>{ window.IsUpdate=true;})">Update</button>
+              <button class="btn btn-link" @onclick="@(() => Delete(window))">Delete</button>
+            }
+          </td>
+        </tr>
+        @if (window.IsExpand)
+        {
+          <tr>
+            <td colspan="4" class="p-4">
+              <Elements WindowId="window.Id" OnElementChange="@((n)=>window.TotalSubElement+=n)"></Elements>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+}
+
+@code {
+  [Parameter]
+  public int OrderId { get; set; }
+  WindowDto newWindow = new WindowDto();
+  List<WindowDto>? windows = new();
+
+  protected override async Task OnInitializedAsync()
+  {
+    windows = await Http.GetFromJsonAsync<List<WindowDto>>($"api/window/{OrderId}");
+
+  }
+  void Details(WindowDto dto)
+  {
+    dto.IsExpand = !dto.IsExpand;
+  }
+  async Task Update(WindowDto window)
+  {
+    var response = await Http.PutAsJsonAsync("api/window/" + window.Id, window);
+    var res = await response.Content.ReadFromJsonAsync<bool>();
+    window.IsUpdate = !res;
+  }
+  async Task Delete(WindowDto window)
+  {
+    if (await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure?"))
+    {
+      var response = await Http.DeleteAsync($"api/window/{window.Id}");
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      if (res)
+        windows = windows?.Where(it => it.Id != window.Id).ToList();
+    }
+
+  }
+  async Task NewOrder()
+  {
+
+    var window = new WindowDto { Name = newWindow.Name, Quantity = newWindow.Quantity, OrderId = OrderId };
+    var response = await Http.PostAsJsonAsync("api/window", window);
+    window = await response.Content.ReadFromJsonAsync<WindowDto>();
+    if (window != null)
+    {
+      windows?.Insert(0, window);
+      newWindow = new WindowDto();
+
+    }
+  }
+}
