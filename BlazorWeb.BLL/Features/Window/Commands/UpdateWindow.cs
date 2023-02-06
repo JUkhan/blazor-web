@@ -7,7 +7,7 @@ namespace BlazorWeb.BLL.Features.Window.Commands
 {
   public static class UpdateWindow
   {
-    public record WindowUpdateCommand(int Id, string Name, int Quantity, int OrderId) : IRequest<bool> { }
+    public record WindowUpdateCommand(int Id, string Name, int? Quantity, int OrderId) : IRequest<bool> { }
 
 
     public class WindowUpdateHandler : IRequestHandler<WindowUpdateCommand, bool>

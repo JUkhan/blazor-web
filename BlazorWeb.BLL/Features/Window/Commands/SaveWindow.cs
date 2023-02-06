@@ -8,7 +8,7 @@ namespace BlazorWeb.BLL.Features.Window.Commands
 {
   public static class SaveWindow
   {
-    public record WindowSaveCommand(string Name, int Quantity, int OrderId) : IRequest<WindowDto> { }
+    public record WindowSaveCommand(string Name, int? Quantity, int OrderId) : IRequest<WindowDto> { }
 
 
     public class WindowSaveHandler : IRequestHandler<WindowSaveCommand, WindowDto>

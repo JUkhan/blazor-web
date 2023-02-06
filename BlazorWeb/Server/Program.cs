@@ -3,7 +3,7 @@ using BlazorWeb.DAL;
 using BlazorWeb.BLL;
 using BlazorWeb.Shared;
 using Microsoft.AspNetCore.Hosting;
-
+using GlobalErrorHandling.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +18,7 @@ builder.Services.AddApplicationServices();
 //builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 //builder.Services.AddAutoMapper(typeof(Program).Assembly);
 var app = builder.Build();
-
+app.UseMiddleware<ExceptionMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -14,7 +14,7 @@
   </div>
 </form>
 
-
+<ErrorMsg Messages="messages" OnClose="@(()=>messages=null)"></ErrorMsg>
 
 
 @if (windows == null)
@@ -86,6 +86,7 @@ else
 }
 
 @code {
+  List<string>? messages;
   [Parameter]
   public int OrderId { get; set; }
   WindowDto newWindow = new WindowDto();
@@ -103,8 +104,17 @@ else
   async Task Update(WindowDto window)
   {
     var response = await Http.PutAsJsonAsync("api/window/" + window.Id, window);
-    var res = await response.Content.ReadFromJsonAsync<bool>();
-    window.IsUpdate = !res;
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+    {
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
+    }
+    else
+    {
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      window.IsUpdate = !res;
+      messages = null;
+    }
   }
   async Task Delete(WindowDto window)
   {
@@ -122,12 +132,21 @@ else
 
     var window = new WindowDto { Name = newWindow.Name, Quantity = newWindow.Quantity, OrderId = OrderId };
     var response = await Http.PostAsJsonAsync("api/window", window);
-    window = await response.Content.ReadFromJsonAsync<WindowDto>();
-    if (window != null)
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
     {
-      windows?.Insert(0, window);
-      newWindow = new WindowDto();
-
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
     }
+    else
+    {
+      window = await response.Content.ReadFromJsonAsync<WindowDto>();
+      if (window != null)
+      {
+        windows?.Insert(0, window);
+        newWindow = new WindowDto();
+        messages = null;
+      }
+    }
+
   }
 }

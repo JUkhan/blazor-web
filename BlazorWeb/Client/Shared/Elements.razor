@@ -19,6 +19,7 @@
   </div>
 </form>
 
+<ErrorMsg Messages="messages" OnClose="@(()=>messages=null)"></ErrorMsg>
 <QuickGrid class="table" Items="@elemnts">
   <TemplateColumn Title="Type" IsDefaultSort="SortDirection.Ascending">
     @if (context.IsUpdate)
@@ -67,6 +68,7 @@
 
 
   @code {
+  List<string>? messages;
   [Parameter]
   public int WindowId { get; set; }
 
@@ -88,8 +90,18 @@
   async Task Update(ElementDto element)
   {
     var response = await Http.PutAsJsonAsync("api/element/" + element.Id, element);
-    var res = await response.Content.ReadFromJsonAsync<bool>();
-    element.IsUpdate = !res;
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+    {
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
+    }
+    else
+    {
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      element.IsUpdate = !res;
+      messages = null;
+    }
+
   }
   async Task Delete(ElementDto element)
   {
@@ -115,12 +127,21 @@
       WindowId = WindowId
     };
     var response = await Http.PostAsJsonAsync("api/element", element);
-    element = await response.Content.ReadFromJsonAsync<ElementDto>();
-    if (element != null)
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
     {
-      elemnts = elemnts?.Prepend(element);
-      newElement = new ElementDto { };
-      await OnElementChange.InvokeAsync(1);
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
+    }
+    else
+    {
+      element = await response.Content.ReadFromJsonAsync<ElementDto>();
+      if (element != null)
+      {
+        elemnts = elemnts?.Prepend(element);
+        newElement = new ElementDto { };
+        await OnElementChange.InvokeAsync(1);
+        messages = null;
+      }
     }
   }
 }

@@ -20,7 +20,7 @@
     <button type="button" @onclick="NewOrder" class="btn btn-primary mb-3">New Order</button>
   </div>
 </form>
-
+<ErrorMsg Messages="messages" OnClose="@(()=>messages=null)"></ErrorMsg>
 @if (orders == null)
 {
   <p><em>Loading...</em></p>
@@ -94,6 +94,7 @@ else
 }
 
 @code {
+  List<string>? messages;
   OrderDto newOrder = new OrderDto();
   List<OrderDto>? orders = new();
   Dictionary<string, string>? states;
@@ -110,8 +111,19 @@ else
   async Task Update(OrderDto order)
   {
     var response = await Http.PutAsJsonAsync("api/order/" + order.Id, order);
-    var res = await response.Content.ReadFromJsonAsync<bool>();
-    order.IsUpdate = !res;
+
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+    {
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
+    }
+    else
+    {
+      var res = await response.Content.ReadFromJsonAsync<bool>();
+      order.IsUpdate = !res;
+      messages = null;
+    }
+
   }
   async Task Delete(OrderDto order)
   {
@@ -128,12 +140,17 @@ else
   {
     var order = new OrderDto { Name = newOrder.Name, State = newOrder.State };
     var response = await Http.PostAsJsonAsync("api/order", order);
-    order = await response.Content.ReadFromJsonAsync<OrderDto>();
-    if (order != null)
+    if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
     {
+      var res = await response.Content.ReadFromJsonAsync<ErrorDetails>();
+      messages = res.ErrorMessages;
+    }
+    else
+    {
+      order = await response.Content.ReadFromJsonAsync<OrderDto>();
       orders?.Insert(0, order);
       newOrder = new OrderDto();
-
+      messages = null;
     }
   }
 }

@@ -7,7 +7,7 @@ namespace BlazorWeb.BLL.Features.Element.Commands
 {
   public static class UpdateElement
   {
-    public record ElementUpdateCommand(int Id, string Type, int Width, int Height, int WindowId) : IRequest<bool> { }
+    public record ElementUpdateCommand(int Id, string Type, int? Width, int? Height, int WindowId) : IRequest<bool> { }
 
 
     public class ElementUpdateHandler : IRequestHandler<ElementUpdateCommand, bool>
@@ -45,7 +45,7 @@ namespace BlazorWeb.BLL.Features.Element.Commands
          .MaximumLength(250).WithMessage("{Type} must not exceed 250 characters.");
 
         RuleFor(p => p.Width)
-           .NotEmpty().WithMessage("{State} is required.")
+           .NotEmpty().WithMessage("{Width} is required.")
            .NotNull();
 
         RuleFor(p => p.Height)

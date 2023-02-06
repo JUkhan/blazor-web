@@ -8,7 +8,7 @@ namespace BlazorWeb.BLL.Features.Element.Commands
 {
   public static class SaveElement
   {
-    public record ElementSaveCommand(string Type, int Width, int Height, int WindowId) : IRequest<ElementDto> { }
+    public record ElementSaveCommand(string Type, int? Width, int? Height, int WindowId) : IRequest<ElementDto> { }
 
 
     public class ElementSaveHandler : IRequestHandler<ElementSaveCommand, ElementDto>
@@ -41,7 +41,7 @@ namespace BlazorWeb.BLL.Features.Element.Commands
         .MaximumLength(250).WithMessage("{Type} must not exceed 250 characters.");
 
         RuleFor(p => p.Width)
-           .NotEmpty().WithMessage("{State} is required.")
+           .NotEmpty().WithMessage("{Width} is required.")
            .NotNull();
         RuleFor(p => p.Height)
            .NotEmpty().WithMessage("{Height} is required.")

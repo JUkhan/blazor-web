@@ -1,0 +1,24 @@
+@if (Messages != null)
+{
+  <div class="alert alert-danger alert-dismissible fade show">
+  <strong>Error!</strong>
+  @foreach (var item in Messages)
+    {
+      <div>@item</div>
+    }
+    <button type="button" class="btn-close" data-bs-dismiss="alert" @onclick="CloseHandler"></button>
+  </div>
+}
+
+@code {
+  [Parameter]
+  public List<string>? Messages { get; set; }
+
+  [Parameter]
+  public EventCallback OnClose { get; set; }
+  void CloseHandler()
+  {
+    Messages = null;
+    OnClose.InvokeAsync();
+  }
+}
