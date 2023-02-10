@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorWeb.DAL.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230205125407_Init")]
-    partial class Init
+    [Migration("20230210065019_MyFirstMigration")]
+    partial class MyFirstMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

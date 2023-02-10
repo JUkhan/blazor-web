@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.ResponseCompression;
 using BlazorWeb.DAL;
 using BlazorWeb.BLL;
+using BlazorWeb.DAL.Persistence;
 using BlazorWeb.Shared;
 using Microsoft.AspNetCore.Hosting;
 using GlobalErrorHandling.Extensions;
+using BlazorWeb.Server.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,6 @@ app.MapControllers();
 
 app.MapFallbackToFile("index.html");
 
-
+app.MigrateDatabase<DataContext>((context, services) => { });
 app.Run();
 

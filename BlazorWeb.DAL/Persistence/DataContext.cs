@@ -7,13 +7,9 @@ namespace BlazorWeb.DAL.Persistence
   public class DataContext : DbContext
   {
 
-    // protected override void OnConfiguring(DbContextOptionsBuilder options)
-    //    => options.UseSqlite($"Data Source=order.db");
+    //protected override void OnConfiguring(DbContextOptionsBuilder options) => options.UseSqlite($"Data Source=order.db");
 
-    public DataContext(DbContextOptions<DataContext> options) : base(options)
-    {
-
-    }
+    public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
     public DbSet<Order> Orders { get; set; }
     public DbSet<Window> Windows { get; set; }

@@ -11,3 +11,10 @@ watch:
 
 build:
 	dotnet build BlazorWeb/Server -c Release
+
+
+dbmigrate:
+	dotnet ef migrations add MyFirstMigration --project BlazorWeb.DAL
+	
+
+
